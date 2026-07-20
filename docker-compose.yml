@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tracerlens-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tracerlens
+      POSTGRES_PASSWORD: tracerlens
+      POSTGRES_DB: tracerlens
+    ports:
+      - "5432:5432"
+    volumes:
+      - tracerlens_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracerlens"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  tracerlens_pgdata:
