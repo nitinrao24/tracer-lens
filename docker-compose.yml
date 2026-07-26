@@ -17,5 +17,20 @@ services:
       timeout: 5s
       retries: 5
 
+  # Optional: run the dashboard in Docker too.
+  #   docker compose --profile app up --build
+  dashboard:
+    build: .
+    profiles: ["app"]
+    container_name: tracerlens-dashboard
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://tracerlens:tracerlens@postgres:5432/tracerlens
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   tracerlens_pgdata:

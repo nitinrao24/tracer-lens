@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build SDK
+        run: npm run build -w @tracerlens/sdk
+      - name: Typecheck
+        run: npm run lint --workspaces --if-present
+      - name: Unit tests
+        run: npm run test --workspaces --if-present
+      - name: Build dashboard
+        run: npm run build -w @tracerlens/dashboard
+
+  integration:
+    name: Postgres integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tracerlens
+          POSTGRES_PASSWORD: tracerlens
+          POSTGRES_DB: tracerlens
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tracerlens"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://tracerlens:tracerlens@localhost:5432/tracerlens
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @tracerlens/sdk
+      - name: Apply migrations
+        run: npm run db:migrate
+      - name: Seed sample spans
+        run: npm run seed -w @tracerlens/db -- 400
+      - name: Smoke check analytics queries
+        run: npx tsx scripts/smoke.mts
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: tracerlens:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

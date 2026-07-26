@@ -1,0 +1,53 @@
+name: Cost regression
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  cost-check:
+    name: Projected inference cost
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @tracerlens/sdk
+
+      - name: Run cost regression check
+        id: cost
+        run: |
+          set -o pipefail
+          npm run cost:check 2>&1 | tee cost-report.md
+
+      - name: Comment results on PR
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '### Cost regression check\n\nNo report produced.';
+            try {
+              body = fs.readFileSync('cost-report.md', 'utf8')
+                .split('\n')
+                .filter(l => !l.startsWith('>') && !l.startsWith('npm '))
+                .join('\n');
+            } catch (e) {}
+            const marker = '<!-- tracerlens-cost-report -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.data.find(c => c.body && c.body.includes(marker));
+            const payload = `${marker}\n${body}`;
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: payload });
+            }

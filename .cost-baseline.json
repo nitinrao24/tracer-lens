@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-07-26T21:44:00.271Z",
+  "totalCostUsd": 116.209,
+  "projectedCostUsd": 66.57784,
+  "savingsPct": 0.427085,
+  "perPrompt": {
+    "classify-ticket": 29.61,
+    "summarize-doc": 40.26,
+    "extract-entities": 11.424,
+    "chat-reply": 33.49,
+    "rerank": 1.425
+  }
+}

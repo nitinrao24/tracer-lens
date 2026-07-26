@@ -1,0 +1,11 @@
+{
+  "description": "Representative production traffic mix, held fixed so cost changes are attributable to code, not traffic.",
+  "eligibleFraction": 0.6,
+  "calls": [
+    { "promptName": "classify-ticket",  "provider": "anthropic", "model": "claude-sonnet-4-20250514",   "calls": 4200, "inputTokensPerCall": 1450, "outputTokensPerCall": 180 },
+    { "promptName": "summarize-doc",    "provider": "anthropic", "model": "claude-sonnet-4-20250514",   "calls": 1100, "inputTokensPerCall": 8600, "outputTokensPerCall": 720 },
+    { "promptName": "extract-entities", "provider": "anthropic", "model": "claude-3-5-haiku-20241022",  "calls": 6800, "inputTokensPerCall": 900,  "outputTokensPerCall": 240 },
+    { "promptName": "chat-reply",       "provider": "openai",    "model": "gpt-4o-2024-11-20",          "calls": 3400, "inputTokensPerCall": 2100, "outputTokensPerCall": 460 },
+    { "promptName": "rerank",           "provider": "openai",    "model": "gpt-4o-mini-2024-07-18",     "calls": 9500, "inputTokensPerCall": 640,  "outputTokensPerCall": 90 }
+  ]
+}
